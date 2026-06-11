@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Yearbook — Character Clique Builder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
+
+  :root {
+    --ink: #1a1a2e;
+    --paper: #f5f0e8;
+    --cream: #faf7f2;
+    --rule: #d4c9b0;
+    --muted: #8a8070;
+    --accent: #c84b31;
+    --jock: #2563eb;
+    --popular: #db2777;
+    --nerd: #16a34a;
+    --emo: #7c3aed;
+    --loner: #64748b;
+    --artsy: #d97706;
+    --theatre: #0891b2;
+    --skater: #ea580c;
+    --gamer: #4f46e5;
+    --prep: #be123c;
+    --band: #0d9488;
+    --unknown: #9ca3af;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 1.5rem 2rem;
+    display: flex;
+    align-items: baseline;
+    gap: 1.5rem;
+    border-bottom: 4px solid var(--accent);
+  }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 1.8rem; letter-spacing: -0.02em; }
+  header span { font-family: 'Courier Prime', monospace; font-size: 0.75rem; opacity: 0.5; letter-spacing: 0.15em; text-transform: uppercase; }
+  nav { margin-left: auto; display: flex; gap: 0.25rem; }
+  nav button {
+    background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--paper);
+    padding: 0.4rem 1rem; border-radius: 4px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 500;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  nav button:hover, nav button.active { background: var(--accent); border-color: var(--accent); }
+
+  /* API KEY BANNER */
+  #api-banner {
+    background: #fffbeb;
+    border-bottom: 2px solid #fde68a;
+    padding: 0.65rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  #api-banner.unlocked { background: #f0fdf4; border-bottom-color: #bbf7d0; }
+  #api-banner .banner-label {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.08em; color: #92400e; white-space: nowrap;
+  }
+  #api-banner.unlocked .banner-label { color: #166534; }
+  #api-key-input {
+    flex: 1; min-width: 260px; max-width: 400px;
+    padding: 0.38rem 0.7rem;
+    border: 1px solid #fcd34d; border-radius: 5px;
+    font-family: 'Courier Prime', monospace; font-size: 0.8rem;
+    background: white; color: var(--ink);
+  }
+  #api-banner.unlocked #api-key-input { border-color: #86efac; background: #f0fdf4; }
+  #api-key-btn {
+    padding: 0.38rem 1rem; background: #d97706; color: white;
+    border: none; border-radius: 5px; font-size: 0.8rem; font-weight: 600;
+    cursor: pointer; white-space: nowrap; transition: background 0.15s;
+  }
+  #api-key-btn:hover { background: #b45309; }
+  #api-banner.unlocked #api-key-btn { background: #16a34a; }
+  #api-banner.unlocked #api-key-btn:hover { background: #15803d; }
+  #api-key-status { font-size: 0.78rem; color: #92400e; }
+  #api-banner.unlocked #api-key-status { color: #166534; }
+
+  /* LAYOUT */
+  .app { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr; } }
+
+  .card { background: var(--cream); border: 1px solid var(--rule); border-radius: 8px; padding: 1.5rem; }
+  .card-title {
+    font-family: 'Courier Prime', monospace; font-size: 0.7rem; text-transform: uppercase;
+    letter-spacing: 0.2em; color: var(--muted); margin-bottom: 1rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--rule);
+  }
+  .card.full { grid-column: 1 / -1; }
+
+  label {
+    display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted);
+    margin-bottom: 0.3rem; margin-top: 0.9rem;
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  label:first-of-type { margin-top: 0; }
+
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%; padding: 0.55rem 0.75rem;
+    border: 1px solid var(--rule); border-radius: 5px;
+    background: white; font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; color: var(--ink); transition: border-color 0.15s;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .slider-row { display: flex; align-items: center; gap: 0.75rem; margin-top: 0.4rem; }
+  .slider-label-pair { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-bottom: 0.1rem; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+  .slider-val { font-family: 'Courier Prime', monospace; font-size: 0.8rem; width: 1.8rem; text-align: center; color: var(--accent); font-weight: 700; }
+
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.4rem; margin-top: 0.5rem; }
+  .check-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.4rem 0.6rem; border: 1px solid var(--rule); border-radius: 5px;
+    cursor: pointer; background: white; transition: all 0.12s; font-size: 0.82rem;
+  }
+  .check-item:hover { border-color: var(--accent); }
+  .check-item input { accent-color: var(--accent); }
+  .check-item.checked { background: #fef2f0; border-color: var(--accent); }
+
+  /* RESULT */
+  #result-panel { display: none; margin-top: 1.5rem; grid-column: 1 / -1; }
+  .clique-badge {
+    display: inline-flex; align-items: center; gap: 0.6rem;
+    padding: 0.5rem 1.2rem; border-radius: 100px;
+    font-weight: 700; font-size: 1rem; text-transform: uppercase;
+    letter-spacing: 0.08em; color: white; margin-bottom: 1rem;
+  }
+  .clique-dot { width: 10px; height: 10px; border-radius: 50%; background: white; opacity: 0.7; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.4);opacity:1} }
+  .result-reasoning { font-size: 0.88rem; line-height: 1.7; color: var(--ink); margin-bottom: 1rem; }
+  .relationship-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .tag { padding: 0.25rem 0.7rem; border-radius: 100px; font-size: 0.75rem; font-weight: 600; border: 1.5px solid currentColor; }
+
+  /* BUTTONS */
+  .btn { padding: 0.65rem 1.5rem; border-radius: 6px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; transition: all 0.15s; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #a83828; }
+  .btn-secondary { background: var(--ink); color: var(--paper); }
+  .btn-secondary:hover { background: #2d2d4a; }
+  .btn-ghost { background: transparent; border: 1px solid var(--rule); color: var(--ink); }
+  .btn-ghost:hover { border-color: var(--ink); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .action-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); grid-column: 1 / -1; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ROSTER */
+  .roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+  .character-card { background: var(--cream); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; position: relative; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; }
+  .character-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+  .character-card .clique-stripe { position: absolute; top: 0; left: 0; width: 4px; height: 100%; border-radius: 8px 0 0 8px; }
+  .char-name { font-family: 'Playfair Display', serif; font-size: 1.1rem; margin-bottom: 0.2rem; padding-left: 0.5rem; }
+  .char-meta { font-size: 0.78rem; color: var(--muted); padding-left: 0.5rem; }
+  .char-clique { display: inline-block; margin-top: 0.6rem; margin-left: 0.5rem; padding: 0.15rem 0.6rem; border-radius: 100px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: white; }
+  .char-actions { display: flex; gap: 0.4rem; margin-top: 0.8rem; padding-left: 0.5rem; }
+  .char-actions button { font-size: 0.75rem; padding: 0.25rem 0.6rem; }
+  .empty-state { text-align: center; padding: 4rem 2rem; color: var(--muted); }
+  .empty-state p { margin-top: 0.5rem; font-size: 0.88rem; }
+
+  /* RELATIONSHIPS */
+  #rel-select-row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  #rel-select-row select { max-width: 220px; flex: 1; }
+  .rel-section { margin-bottom: 2rem; }
+  .rel-section h3 { font-family: 'Courier Prime', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.18em; color: var(--muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+  .rel-section h3::after { content: ''; flex: 1; height: 1px; background: var(--rule); }
+  .rel-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .rel-pill { padding: 0.4rem 0.9rem; border-radius: 100px; font-size: 0.82rem; font-weight: 500; border: 1.5px solid; cursor: pointer; transition: opacity 0.1s; }
+  .rel-pill:hover { opacity: 0.75; }
+  .rel-friends { color: #16a34a; border-color: #16a34a; background: #f0fdf4; }
+  .rel-lovers  { color: #db2777; border-color: #db2777; background: #fdf2f8; }
+  .rel-enemies { color: #dc2626; border-color: #dc2626; background: #fef2f2; }
+  .rel-acquaintances { color: #d97706; border-color: #d97706; background: #fffbeb; }
+  .rel-strangers { color: #64748b; border-color: #64748b; background: #f8fafc; }
+  .rel-reasoning-box { background: var(--cream); border: 1px solid var(--rule); border-radius: 8px; padding: 1.2rem; margin-top: 1.5rem; font-size: 0.88rem; line-height: 1.7; }
+  .rel-reasoning-box strong { display: block; font-family: 'Courier Prime', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); margin-bottom: 0.5rem; }
+
+  /* SECTION HEADERS */
+  .section-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 2px solid var(--ink); }
+  .section-header h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; }
+  .section-header p { font-size: 0.82rem; color: var(--muted); }
+
+  .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--ink); color: var(--paper); padding: 0.75rem 1.2rem; border-radius: 8px; font-size: 0.85rem; opacity: 0; transform: translateY(10px); transition: all 0.3s; pointer-events: none; z-index: 999; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .no-chars-msg { background: var(--cream); border: 1px dashed var(--rule); border-radius: 8px; padding: 2rem; text-align: center; color: var(--muted); font-size: 0.88rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>The Yearbook</h1>
+  <span>Character Clique Builder</span>
+  <nav>
+    <button class="active" onclick="showView('create')">+ New Character</button>
+    <button onclick="showView('roster')">Roster</button>
+    <button onclick="showView('relationships')">Relationships</button>
+  </nav>
+</header>
+
+<!-- API KEY BANNER -->
+<div id="api-banner">
+  <span class="banner-label">🔑 API Key</span>
+  <input type="password" id="api-key-input" placeholder="Paste your Anthropic API key here (sk-ant-...)">
+  <button id="api-key-btn" onclick="setApiKey()">Unlock</button>
+  <span id="api-key-status">Key required to classify characters — never stored, session only</span>
+</div>
+
+<div class="app">
+
+  <!-- CREATE VIEW -->
+  <div id="view-create" class="view active">
+    <div class="section-header">
+      <h2>New Character</h2>
+      <p>Fill in the details — the more you give, the more accurate the clique assignment.</p>
+    </div>
+    <div class="form-grid">
+      <div class="card">
+        <div class="card-title">Basic Info</div>
+        <label>Character Name</label>
+        <input type="text" id="char-name" placeholder="e.g. Maya Chen">
+        <label>Age / Year Group</label>
+        <input type="text" id="char-age" placeholder="e.g. 16, Junior, Year 11">
+        <label>Background (optional)</label>
+        <textarea id="char-background" placeholder="Family situation, where they grew up, anything that shaped them…"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Personality Traits</div>
+        <label>Social Energy</label>
+        <div class="slider-label-pair"><span>Introvert</span><span>Extrovert</span></div>
+        <div class="slider-row"><input type="range" id="sl-social" min="1" max="10" value="5" oninput="updateSlider(this,'sv-social')"><span class="slider-val" id="sv-social">5</span></div>
+        <label>Academic Drive</label>
+        <div class="slider-label-pair"><span>Couldn't care less</span><span>Straight-A obsessed</span></div>
+        <div class="slider-row"><input type="range" id="sl-academic" min="1" max="10" value="5" oninput="updateSlider(this,'sv-academic')"><span class="slider-val" id="sv-academic">5</span></div>
+        <label>Confidence</label>
+        <div class="slider-label-pair"><span>Very shy</span><span>Magnetic presence</span></div>
+        <div class="slider-row"><input type="range" id="sl-confidence" min="1" max="10" value="5" oninput="updateSlider(this,'sv-confidence')"><span class="slider-val" id="sv-confidence">5</span></div>
+        <label>Rebelliousness</label>
+        <div class="slider-label-pair"><span>Rule-follower</span><span>Troublemaker</span></div>
+        <div class="slider-row"><input type="range" id="sl-rebel" min="1" max="10" value="5" oninput="updateSlider(this,'sv-rebel')"><span class="slider-val" id="sv-rebel">5</span></div>
+        <label>Empathy</label>
+        <div class="slider-label-pair"><span>Self-centred</span><span>Deeply caring</span></div>
+        <div class="slider-row"><input type="range" id="sl-empathy" min="1" max="10" value="5" oninput="updateSlider(this,'sv-empathy')"><span class="slider-val" id="sv-empathy">5</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Interests & Hobbies</div>
+        <div class="check-grid" id="interests-grid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Style & Aesthetic</div>
+        <label>Fashion Vibe</label>
+        <select id="char-fashion">
+          <option value="">— select —</option>
+          <option>Athleisure / sporty</option><option>Preppy / smart casual</option>
+          <option>All-black / dark</option><option>Streetwear / skate</option>
+          <option>Thrifted / vintage</option><option>Artsy / eclectic</option>
+          <option>Basic / whatever's clean</option><option>Cottagecore / soft</option>
+          <option>E-boy / E-girl</option><option>Hypebeast</option>
+        </select>
+        <label>Music Taste</label>
+        <select id="char-music">
+          <option value="">— select —</option>
+          <option>Pop / mainstream</option><option>Indie / alternative</option>
+          <option>Rock / metal / emo</option><option>Hip-hop / rap</option>
+          <option>R&B / soul</option><option>Classical / jazz</option>
+          <option>Electronic / EDM</option><option>K-pop / J-pop</option>
+          <option>Country / folk</option><option>Musical theatre / Broadway</option>
+          <option>Video game / anime OSTs</option>
+        </select>
+        <label>Online Presence</label>
+        <select id="char-online">
+          <option value="">— select —</option>
+          <option>Very active — posts constantly</option>
+          <option>Lurker — consumes but rarely posts</option>
+          <option>Gaming-focused (Twitch/Discord)</option>
+          <option>Niche community person (Reddit/forums)</option>
+          <option>Barely online</option><option>Influencer-aspirant</option>
+        </select>
+        <label>Attitude Toward School</label>
+        <select id="char-school-att">
+          <option value="">— select —</option>
+          <option>Loves it — involved in everything</option>
+          <option>Tolerates it — just gets through</option>
+          <option>Hates it but shows up</option>
+          <option>Active troublemaker</option>
+          <option>Only cares about grades</option>
+          <option>Only cares about their specific thing (sport, drama, etc.)</option>
+        </select>
+      </div>
+
+      <div class="card full">
+        <div class="card-title">Anything Else? (Free Text)</div>
+        <textarea id="char-notes" placeholder="Quirks, secrets, defining moments, specific traits that don't fit the boxes above…" style="min-height:100px"></textarea>
+      </div>
+
+      <div id="result-panel" class="card full">
+        <div class="card-title">Clique Classification</div>
+        <div id="result-inner"></div>
+      </div>
+
+      <div class="action-row">
+        <button class="btn btn-primary" id="classify-btn" onclick="classifyCharacter()">Classify Character</button>
+        <button class="btn btn-secondary" id="save-btn" onclick="saveCharacter()" style="display:none">Save to Roster</button>
+        <button class="btn btn-ghost" onclick="clearForm()">Clear Form</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ROSTER VIEW -->
+  <div id="view-roster" class="view">
+    <div class="section-header">
+      <h2>The Roster</h2>
+      <p id="roster-count">0 characters saved</p>
+    </div>
+    <div class="roster-grid" id="roster-grid"></div>
+  </div>
+
+  <!-- RELATIONSHIPS VIEW -->
+  <div id="view-relationships" class="view">
+    <div class="section-header">
+      <h2>Relationships</h2>
+      <p>Select a character to see how they relate to everyone else.</p>
+    </div>
+    <div id="rel-select-row">
+      <select id="rel-char-select" onchange="loadRelationships()">
+        <option value="">— pick a character —</option>
+      </select>
+      <button class="btn btn-primary" id="rel-analyse-btn" onclick="analyseRelationships()" style="display:none">Analyse Relationships</button>
+    </div>
+    <div id="rel-content"></div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── API KEY ───────────────────────────────────────────────────────────────
+let _apiKey = '';
+
+function setApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-ant-')) {
+    showToast('That doesn\'t look like a valid Anthropic key (should start with sk-ant-)');
+    return;
+  }
+  _apiKey = val;
+  const banner = document.getElementById('api-banner');
+  banner.classList.add('unlocked');
+  document.getElementById('api-key-status').textContent = '✓ Key set for this session — not saved anywhere';
+  document.getElementById('api-key-btn').textContent = 'Change';
+  document.getElementById('api-key-input').value = '••••••••••••••••••••';
+  showToast('API key set — ready to classify!');
+}
+
+// Allow pressing Enter in the key field
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('api-key-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') setApiKey();
+  });
+});
+
+async function callClaude(prompt) {
+  if (!_apiKey) throw new Error('No API key set');
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': _apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1200,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data.content.map(b => b.text || '').join('').trim().replace(/```json|```/g, '');
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────────
+const INTERESTS = [
+  'Football / Soccer','Basketball','Baseball','Volleyball','Swimming',
+  'Track & Field','Cheerleading','Gaming (casual)','Gaming (hardcore)',
+  'Anime / Manga','Reading','Creative writing','Drawing / Painting',
+  'Photography','Music (playing)','Drama / Theatre','Dance','Film / TV',
+  'Coding / Tech','Science','Maths','History','Debate / Politics',
+  'Skateboarding','BMX / Cycling','TikTok / Social media','Cooking','Fashion',
+  'Fitness / Gym','Tabletop RPGs','Volunteering / Activism'
+];
+
+const CLIQUE_COLORS = {
+  'Jock':'var(--jock)','Popular':'var(--popular)','Nerd':'var(--nerd)',
+  'Emo':'var(--emo)','Loner':'var(--loner)','Artsy':'var(--artsy)',
+  'Theatre':'var(--theatre)','Skater':'var(--skater)','Gamer':'var(--gamer)',
+  'Preppy':'var(--prep)','Band':'var(--band)',
+};
+
+function getCliqueColor(clique) {
+  if (!clique) return 'var(--unknown)';
+  for (const [key, val] of Object.entries(CLIQUE_COLORS)) {
+    if (clique.toLowerCase().includes(key.toLowerCase())) return val;
+  }
+  return 'var(--unknown)';
+}
+
+// ── STORAGE ───────────────────────────────────────────────────────────────
+function loadCharacters() {
+  try { return JSON.parse(localStorage.getItem('yearbook_chars') || '[]'); }
+  catch { return []; }
+}
+function saveCharacters(chars) {
+  localStorage.setItem('yearbook_chars', JSON.stringify(chars));
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+(function initInterests() {
+  const grid = document.getElementById('interests-grid');
+  INTERESTS.forEach(interest => {
+    const div = document.createElement('div');
+    div.className = 'check-item';
+    div.innerHTML = `<input type="checkbox" value="${interest}"> ${interest}`;
+    div.onclick = function() {
+      this.classList.toggle('checked');
+      this.querySelector('input').checked = this.classList.contains('checked');
+    };
+    grid.appendChild(div);
+  });
+})();
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+function updateSlider(el, valId) { document.getElementById(valId).textContent = el.value; }
+
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.querySelectorAll('nav button').forEach((b, i) => {
+    b.classList.toggle('active', ['create','roster','relationships'][i] === name);
+  });
+  if (name === 'roster') renderRoster();
+  if (name === 'relationships') populateRelSelect();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function clearForm() {
+  ['char-name','char-age','char-background','char-notes'].forEach(id => document.getElementById(id).value = '');
+  ['char-fashion','char-music','char-online','char-school-att'].forEach(id => document.getElementById(id).value = '');
+  ['social','academic','confidence','rebel','empathy'].forEach(k => {
+    document.getElementById('sl-'+k).value = 5;
+    document.getElementById('sv-'+k).textContent = '5';
+  });
+  document.querySelectorAll('.check-item').forEach(el => {
+    el.classList.remove('checked');
+    el.querySelector('input').checked = false;
+  });
+  document.getElementById('result-panel').style.display = 'none';
+  document.getElementById('save-btn').style.display = 'none';
+  window._lastClassification = null;
+}
+
+function gatherFormData() {
+  const interests = Array.from(document.querySelectorAll('.check-item.checked')).map(el => el.querySelector('input').value);
+  return {
+    name: document.getElementById('char-name').value.trim() || 'Unnamed Character',
+    age: document.getElementById('char-age').value.trim(),
+    background: document.getElementById('char-background').value.trim(),
+    notes: document.getElementById('char-notes').value.trim(),
+    fashion: document.getElementById('char-fashion').value,
+    music: document.getElementById('char-music').value,
+    online: document.getElementById('char-online').value,
+    schoolAttitude: document.getElementById('char-school-att').value,
+    social: document.getElementById('sl-social').value,
+    academic: document.getElementById('sl-academic').value,
+    confidence: document.getElementById('sl-confidence').value,
+    rebel: document.getElementById('sl-rebel').value,
+    empathy: document.getElementById('sl-empathy').value,
+    interests,
+  };
+}
+
+// ── CLASSIFY ─────────────────────────────────────────────────────────────
+async function classifyCharacter() {
+  if (!_apiKey) { showToast('Please enter your API key at the top first!'); return; }
+  const btn = document.getElementById('classify-btn');
+  const data = gatherFormData();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Classifying…';
+
+  const prompt = `You are a social dynamics expert for high school/college fiction writing. Classify this character into their most likely school clique.
+
+CHARACTER DATA:
+Name: ${data.name}
+Age/Year: ${data.age || 'Not specified'}
+Background: ${data.background || 'Not specified'}
+Interests: ${data.interests.length ? data.interests.join(', ') : 'Not specified'}
+Fashion style: ${data.fashion || 'Not specified'}
+Music taste: ${data.music || 'Not specified'}
+Online presence: ${data.online || 'Not specified'}
+School attitude: ${data.schoolAttitude || 'Not specified'}
+Personality (1–10):
+- Social energy (1=introvert, 10=extrovert): ${data.social}
+- Academic drive (1=no interest, 10=straight-A): ${data.academic}
+- Confidence (1=very shy, 10=magnetic): ${data.confidence}
+- Rebelliousness (1=rule-follower, 10=troublemaker): ${data.rebel}
+- Empathy (1=self-centred, 10=deeply caring): ${data.empathy}
+Extra notes: ${data.notes || 'None'}
+
+Available cliques: Jock, Popular Crowd, Nerd/Academic, Emo/Alt, Loner, Artsy, Theatre Kid, Skater/Streetwear, Gamer, Preppy, Band/Music. You may suggest a hybrid of two.
+
+Respond in STRICT JSON with no markdown fences:
+{
+  "clique": "single best clique label",
+  "confidence": "High / Medium / Low",
+  "reasoning": "2-3 sentences explaining why",
+  "likelyFriendsWith": ["clique1","clique2","clique3"],
+  "likelyEnemiesWith": ["clique1","clique2"],
+  "likelyLoversFrom": ["clique1","clique2"],
+  "acquaintancesWith": ["clique1","clique2"],
+  "characterNotes": "1-2 sentences on this character's unique social dynamic"
+}`;
+
+  try {
+    const text = await callClaude(prompt);
+    const result = JSON.parse(text);
+    window._lastClassification = { ...data, ...result, id: Date.now() };
+    renderResult(result, data.name);
+  } catch (e) {
+    console.error(e);
+    showToast('Error: ' + (e.message || 'Classification failed'));
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Classify Character';
+}
+
+function renderResult(result, name) {
+  const panel = document.getElementById('result-panel');
+  const inner = document.getElementById('result-inner');
+  const color = getCliqueColor(result.clique);
+  const tagList = (arr, label) => arr && arr.length
+    ? `<div style="margin-top:0.6rem"><span style="font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;">${label}</span><div class="relationship-tags">${arr.map(t => `<span class="tag" style="color:${color};border-color:${color}">${t}</span>`).join('')}</div></div>`
+    : '';
+  inner.innerHTML = `
+    <div class="clique-badge" style="background:${color}">
+      <div class="clique-dot"></div>${result.clique}
+      <span style="opacity:0.7;font-size:0.7rem;font-weight:400;text-transform:none;">· ${result.confidence} confidence</span>
+    </div>
+    <p class="result-reasoning">${result.reasoning}</p>
+    <p style="font-size:0.85rem;color:var(--muted);font-style:italic;margin-bottom:0.8rem">${result.characterNotes || ''}</p>
+    ${tagList(result.likelyFriendsWith,'🤝 Likely friends with')}
+    ${tagList(result.likelyEnemiesWith,'⚡ Friction with')}
+    ${tagList(result.likelyLoversFrom,'💕 Romantic potential from')}
+    ${tagList(result.acquaintancesWith,'👋 Acquaintances with')}
+  `;
+  panel.style.display = 'block';
+  document.getElementById('save-btn').style.display = 'inline-flex';
+}
+
+// ── SAVE / ROSTER ─────────────────────────────────────────────────────────
+function saveCharacter() {
+  if (!window._lastClassification) return;
+  const chars = loadCharacters();
+  const idx = chars.findIndex(c => c.name.toLowerCase() === window._lastClassification.name.toLowerCase());
+  if (idx >= 0) { chars[idx] = window._lastClassification; showToast(`Updated "${window._lastClassification.name}"`); }
+  else { chars.push(window._lastClassification); showToast(`"${window._lastClassification.name}" saved!`); }
+  saveCharacters(chars);
+  document.getElementById('save-btn').style.display = 'none';
+}
+
+function renderRoster() {
+  const chars = loadCharacters();
+  const grid = document.getElementById('roster-grid');
+  document.getElementById('roster-count').textContent = `${chars.length} character${chars.length !== 1 ? 's' : ''} saved`;
+  if (!chars.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><p style="font-size:2rem">📋</p><p>No characters yet. Create one to get started.</p></div>`;
+    return;
+  }
+  grid.innerHTML = chars.map((c, i) => {
+    const color = getCliqueColor(c.clique);
+    return `<div class="character-card">
+      <div class="clique-stripe" style="background:${color}"></div>
+      <div class="char-name">${c.name}</div>
+      <div class="char-meta">${c.age || ''}${c.age && c.interests && c.interests.length ? ' · ' : ''}${c.interests ? c.interests.slice(0,2).join(', ') : ''}</div>
+      <span class="char-clique" style="background:${color}">${c.clique || 'Unclassified'}</span>
+      <div class="char-actions">
+        <button class="btn btn-ghost" onclick="editCharacter(${i})">Edit</button>
+        <button class="btn btn-ghost" onclick="viewCharDetail(${i})">Details</button>
+        <button class="btn btn-ghost" onclick="deleteCharacter(${i})" style="color:var(--accent)">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function editCharacter(idx) {
+  const chars = loadCharacters();
+  const c = chars[idx];
+  document.getElementById('char-name').value = c.name || '';
+  document.getElementById('char-age').value = c.age || '';
+  document.getElementById('char-background').value = c.background || '';
+  document.getElementById('char-notes').value = c.notes || '';
+  document.getElementById('char-fashion').value = c.fashion || '';
+  document.getElementById('char-music').value = c.music || '';
+  document.getElementById('char-online').value = c.online || '';
+  document.getElementById('char-school-att').value = c.schoolAttitude || '';
+  ['social','academic','confidence','rebel','empathy'].forEach(k => {
+    document.getElementById('sl-'+k).value = c[k] || 5;
+    document.getElementById('sv-'+k).textContent = c[k] || 5;
+  });
+  document.querySelectorAll('.check-item').forEach(el => {
+    const checked = c.interests && c.interests.includes(el.querySelector('input').value);
+    el.classList.toggle('checked', checked);
+    el.querySelector('input').checked = checked;
+  });
+  if (c.clique) { window._lastClassification = c; renderResult(c, c.name); }
+  showView('create');
+}
+
+function viewCharDetail(idx) {
+  const chars = loadCharacters();
+  const c = chars[idx];
+  window._lastClassification = c;
+  renderResult(c, c.name);
+  showView('create');
+  document.getElementById('save-btn').style.display = 'none';
+}
+
+function deleteCharacter(idx) {
+  const chars = loadCharacters();
+  const name = chars[idx].name;
+  if (!confirm(`Delete "${name}"?`)) return;
+  chars.splice(idx, 1);
+  saveCharacters(chars);
+  renderRoster();
+  showToast(`Deleted "${name}"`);
+}
+
+// ── RELATIONSHIPS ─────────────────────────────────────────────────────────
+function populateRelSelect() {
+  const chars = loadCharacters();
+  const sel = document.getElementById('rel-char-select');
+  sel.innerHTML = '<option value="">— pick a character —</option>' +
+    chars.map((c, i) => `<option value="${i}">${c.name} (${c.clique || 'No clique'})</option>`).join('');
+  document.getElementById('rel-content').innerHTML = '';
+  document.getElementById('rel-analyse-btn').style.display = 'none';
+}
+
+function loadRelationships() {
+  const sel = document.getElementById('rel-char-select');
+  document.getElementById('rel-analyse-btn').style.display = sel.value !== '' ? 'inline-flex' : 'none';
+  document.getElementById('rel-content').innerHTML = '';
+}
+
+async function analyseRelationships() {
+  if (!_apiKey) { showToast('Please enter your API key at the top first!'); return; }
+  const sel = document.getElementById('rel-char-select');
+  const idx = parseInt(sel.value);
+  const chars = loadCharacters();
+  if (chars.length < 2) {
+    document.getElementById('rel-content').innerHTML = `<div class="no-chars-msg">You need at least 2 characters saved to map relationships.</div>`;
+    return;
+  }
+  const focal = chars[idx];
+  const others = chars.filter((_, i) => i !== idx);
+  const btn = document.getElementById('rel-analyse-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Analysing…';
+
+  const othersText = others.map(c =>
+    `- ${c.name}: Clique=${c.clique}, Interests=${(c.interests||[]).join(', ')}, Social=${c.social}, Academic=${c.academic}, Confidence=${c.confidence}, Rebel=${c.rebel}, Empathy=${c.empathy}, Fashion=${c.fashion||''}, Music=${c.music||''}`
+  ).join('\n');
+
+  const prompt = `You are a social dynamics expert for fiction writing. Analyse how the focal character relates to each other character.
+
+FOCAL CHARACTER:
+Name: ${focal.name}, Clique: ${focal.clique}
+Interests: ${(focal.interests||[]).join(', ')}
+Social: ${focal.social}/10, Academic: ${focal.academic}/10, Confidence: ${focal.confidence}/10, Rebelliousness: ${focal.rebel}/10, Empathy: ${focal.empathy}/10
+Fashion: ${focal.fashion||''}, Music: ${focal.music||''}, Notes: ${focal.notes||''}
+
+OTHERS:
+${othersText}
+
+Classify each relationship as: Friends, Lovers, Enemies, Acquaintances, or Strangers.
+
+Respond in STRICT JSON (no markdown fences):
+{
+  "relationships": [
+    { "name": "character name", "type": "Friends|Lovers|Enemies|Acquaintances|Strangers", "reason": "one sentence" }
+  ],
+  "socialSummary": "2-3 sentences on ${focal.name}'s overall social standing in this group"
+}`;
+
+  try {
+    const text = await callClaude(prompt);
+    const result = JSON.parse(text);
+    renderRelationships(focal, result);
+  } catch(e) {
+    console.error(e);
+    document.getElementById('rel-content').innerHTML = `<div class="no-chars-msg">Analysis failed: ${e.message}</div>`;
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Analyse Relationships';
+}
+
+function renderRelationships(focal, result) {
+  const groups = { Friends:[], Lovers:[], Enemies:[], Acquaintances:[], Strangers:[] };
+  (result.relationships||[]).forEach(r => { if (groups[r.type]) groups[r.type].push(r); });
+  const icons = { Friends:'🤝', Lovers:'💕', Enemies:'⚡', Acquaintances:'👋', Strangers:'👻' };
+  const cls   = { Friends:'rel-friends', Lovers:'rel-lovers', Enemies:'rel-enemies', Acquaintances:'rel-acquaintances', Strangers:'rel-strangers' };
+  let html = `<div class="rel-reasoning-box"><strong>Social Summary for ${focal.name}</strong>${result.socialSummary||''}</div>`;
+  for (const [type, people] of Object.entries(groups)) {
+    if (!people.length) continue;
+    html += `<div class="rel-section" style="margin-top:1.5rem"><h3>${icons[type]} ${type}</h3><div class="rel-pills">`;
+    people.forEach(p => { html += `<div class="rel-pill ${cls[type]}" title="${p.reason}">${p.name}</div>`; });
+    html += `</div>`;
+    people.forEach(p => { html += `<div style="font-size:0.8rem;color:var(--muted);margin-top:0.4rem;padding-left:0.2rem">• <strong>${p.name}:</strong> ${p.reason}</div>`; });
+    html += `</div>`;
+  }
+  document.getElementById('rel-content').innerHTML = html;
+}
+</script>
+</body>
+</html>
